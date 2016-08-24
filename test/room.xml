@@ -1,0 +1,58 @@
+<scene>
+    <material name="diffuse-white"  color="1 1 1" roughness="1" />
+    <material name="diffuse-red"    color="1 0 0" roughness="1" />
+    <material name="diffuse-yellow" color="1 1 0" roughness="1" />
+    <material name="diffuse-green"  color="0 1 0" roughness="1" />
+    <material name="diffuse-cyan"   color="0 1 1" roughness="1" />
+    <material name="diffuse-blue"   color="0 0 1" roughness="1" />
+    <material name="diffuse-lightblue"   color="0.6 0.7 1" roughness="1" />
+    <material name="diffuse-purple" color="1 0 1" roughness="1" />
+
+    <material name="smooth-white"  color="1 1 1" roughness="0.5" />
+    <material name="smooth-red"    color="1 0 0" roughness="0.5" />
+    <material name="smooth-yellow" color="1 1 0" roughness="0.5" />
+    <material name="smooth-green"  color="0 1 0" roughness="0.5" />
+    <material name="smooth-cyan"   color="0 1 1" roughness="0.5" />
+    <material name="smooth-blue"   color="0 0 1" roughness="0.5" />
+    <material name="smooth-purple" color="1 0 1" roughness="0.5" />
+
+    <material name="reflective-white"  color="1 1 1" roughness="0.2" />
+    <material name="reflective-red"    color="1 0 0" roughness="0.2" />
+    <material name="reflective-yellow" color="1 1 0" roughness="0.2" />
+    <material name="reflective-green"  color="0 1 0" roughness="0.2" />
+    <material name="reflective-cyan"   color="0 1 1" roughness="0.2" />
+    <material name="reflective-blue"   color="0 0 1" roughness="0.2" />
+    <material name="reflective-purple" color="1 0 1" roughness="0.2" />
+
+    <material name="mirror" color="1 1 1" roughness="0" />
+    <material name="blue-light" color="1 1 3" roughness="1" emit="true" />
+    <material name="strong-light" color="4 4 4" roughness="1" emit="true" />
+    <material name="strong-yellow-light" color="3 3 0" roughness="1" emit="true" />
+
+    <geometry type="sphere" material="blue-light" center="0 2.2 -3" radius="0.5" />
+    <geometry type="disk" material="mirror" center="1.8 1.7 1.1" radius="0.4" normal="-1 0 0" />
+    <geometry type="disk" material="diffuse-lightblue" center="0 2.8 2" radius="1.6" normal="0 -1 0" />
+    <geometry type="plane" material="diffuse-white" center="0 0 0" normal="0 1 0" />  <!--floor-->
+    <geometry type="plane" material="diffuse-white" center="0 2.8 0" normal="0 -1 0" /> <!--ceiling-->
+    <geometry type="plane" material="diffuse-white" center="-1.8 0 0" normal="1 0 0" /> <!--left-->
+    <geometry type="plane" material="diffuse-white" center="1.8 0 0" normal="-1 0 0" /> <!--right-->
+    <!--<geometry type="plane" material="smooth-white" center="0 0 4" normal="0 0 -1" />--> <!--bottom-->
+    <geometry type="orb" material="strong-light"
+        center="-1.5 2.4 1.0" extent="0.2 0.1 1.0"
+        x-axis="1 0 0" y-axis="0 1 0" z-axis="0 0 1" />
+    <geometry type="orb" material="strong-yellow-light"
+        center="1.5 2.4 2.7" extent="0.1 0.1 1.0"
+        x-axis="1 0 0" y-axis="0 1 0" z-axis="0 0 1" />
+    <geometry type="orb" material="diffuse-green"
+        center="-0.5 0.7 1.2" extent="0.8 0.03 0.4"
+        x-axis="1 0 0" y-axis="0 1 0" z-axis="0 0 1" />
+    <geometry type="sphere" material="mirror" center="0 2.2 2" radius="0.5" />
+    <geometry type="sphere" material="smooth-green" center="-0.5 0.35 1.2" radius="0.35" />
+    <geometry type="sphere" material="reflective-blue" center="-0.1 0.85 1.2" radius="0.15" />
+    <geometry type="sphere" material="smooth-blue" center="-0.5 0.85 1.2" radius="0.15" />
+    <geometry type="sphere" material="diffuse-blue" center="-0.9 0.85 1.2" radius="0.15" />
+    <geometry type="sphere" material="smooth-red" center="1.0 0 1.4" radius="0.5" />
+    <geometry type="disk" material="mirror" center="0 1 4" radius="1.2" normal="0 0 -1" />
+
+    <camera position="0 1.7 -3" direction="0 0.3 1" up="0 1 0" fov="1.3" near="0.1" far="1000" />
+</scene>
