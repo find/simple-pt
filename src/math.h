@@ -2,7 +2,7 @@
 #include <cmath>
 #include <algorithm>
 
-typedef double real_t;
+typedef float real_t;
 static const real_t PI = real_t(3.1415926535897932384626);
 
 struct vec3_t {

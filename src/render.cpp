@@ -159,19 +159,26 @@ static vec3_t radiance(ray_t const& ray, Scene const& scene, int depth, RandomFu
   } else {
     real_t closest2 = std::numeric_limits<real_t>::max();
     vec3_t color(0, 0, 0);
+    intersection_t nearestHit;
+    bool   hasHit = false;
+
     for (Geometry* g : scene.geometry_list) {
       intersection_t intr;
       real_t distance2;
       if (g->intersect(ray, &intr) && (distance2 = lengthSquare(intr.intersection[0] - ray.origin)) < closest2) {
         closest2 = distance2;
-        ray_t ref = reflect(ray, intr.intersection[0], intr.normal[0], intr.material, f);
-        ref.origin += ref.direction*real_t(1e-4);
-        color = radiance(ref, scene, depth - 1, f);
-        if (intr.material->emit) {
-          color = color + intr.material->color;
-        } else {
-          color = color * intr.material->color;
-        }
+        hasHit = true;
+        nearestHit = intr;
+      }
+    }
+    if (hasHit) {
+      ray_t ref = reflect(ray, nearestHit.intersection[0], nearestHit.normal[0], nearestHit.material, f);
+      ref.origin += ref.direction*real_t(1e-4);
+      color = radiance(ref, scene, depth - 1, f);
+      if (nearestHit.material->emit) {
+        color = color + nearestHit.material->color;
+      } else {
+        color = color * nearestHit.material->color;
       }
     }
     return color;
@@ -219,17 +226,23 @@ void render(bitmap_t *target, Scene const& scene, option_t const& opt) {
         real_t minSquareDist = std::numeric_limits<real_t>::max();
         real_t squareDist;
         vec3_t pixelColor(0, 0, 0);
+        intersection_t nearestHit;
+        bool hasHit = false;
         for (Geometry* g : scene.geometry_list) {
           intersection_t intersection;
           if (g->intersect(ray, &intersection) &&
             (squareDist = lengthSquare(intersection.intersection[0] - ray.origin)) < minSquareDist) {
             minSquareDist = squareDist;
-            pixelColor = vec3_t(0, 0, 0);
+            hasHit = true;
+            nearestHit = intersection;
+          }
+        }
+        if (hasHit) {
+          pixelColor = vec3_t(0, 0, 0);
 
-            for (int i = 0; i < opt.samples; ++i) {
-              ray_t ref = reflect(ray, intersection.intersection[0], intersection.normal[0], intersection.material, random);
-              pixelColor += radiance(ref, scene, opt.depth, random) * intersection.material->color * real_t(1.0 / opt.samples);
-            }
+          for (int i = 0; i < opt.samples; ++i) {
+            ray_t ref = reflect(ray, nearestHit.intersection[0], nearestHit.normal[0], nearestHit.material, random);
+            pixelColor += radiance(ref, scene, opt.depth, random) * nearestHit.material->color * real_t(1.0 / opt.samples);
           }
         }
         target->pixels[iy*target->width + ix] += pixelColor * real_t(0.25);
