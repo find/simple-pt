@@ -196,7 +196,6 @@ void render(bitmap_t *target, Scene const& scene, option_t const& opt) {
     return dist(gen);
   };
 
-#pragma omp parallel for schedule(dynamic,1)
   for (int ix = 0; ix<target->width; ++ix) {
     for (int iy = 0; iy<target->height; ++iy) {
       // super sampling
