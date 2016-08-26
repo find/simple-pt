@@ -5,7 +5,7 @@
 typedef float real_t;
 static const real_t PI = real_t(3.1415926535897932384626);
 
-struct vec3_t {
+__declspec(align(16)) struct vec3_t {
   vec3_t(real_t x = 0.0f, real_t y = 0.0f, real_t z = 0.0f)
       : x(x), y(y), z(z) {}
   vec3_t& operator=(vec3_t const& v) {
@@ -16,7 +16,7 @@ struct vec3_t {
   }
   vec3_t operator-() const { return vec3_t(-x, -y, -z); }
 
-  real_t x, y, z;
+  real_t x, y, z, _;
 };
 
 inline vec3_t operator+(vec3_t const &a, vec3_t const &b) {

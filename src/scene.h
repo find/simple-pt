@@ -23,7 +23,8 @@ public:
   camera_t camera;
   ~Scene() {
     for(Geometry* g : geometry_list) {
-      delete g;
+      // delete g;
+      g->~Geometry();
     }
   }
 

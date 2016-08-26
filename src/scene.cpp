@@ -5,6 +5,40 @@
 #include <assert.h>
 #include <string.h>
 
+class MemPool {
+  uint8_t *mem_;
+  size_t   size_;
+  size_t   head_;
+
+public:
+  MemPool(size_t size) :size_(size), head_(0) {
+    mem_ = static_cast<uint8_t*>(_aligned_malloc(size,16));
+  }
+  ~MemPool() {
+    _aligned_free(mem_);
+  }
+  void reset() {
+    head_ = 0;
+  }
+  void* alloc(size_t size) {
+    head_ += size;
+    assert(head_ <= size_);
+    return mem_ + (head_ - size);
+  }
+};
+
+void* operator new(size_t sz, MemPool& pool) {
+  return pool.alloc(sz);
+}
+void operator delete(void* ptr, MemPool& pool) {
+  // do nothing
+}
+
+static MemPool& pool() {
+  static MemPool s_pool(1024 * 1024);
+  return s_pool;
+}
+
 static vec3_t _vec3Attr(pugi::xml_node node, char const* name) {
   float v[3];
   assert(3==sscanf(node.attribute(name).value(), "%f%f%f", v, v+1, v+2));
@@ -21,7 +55,7 @@ static material_t _createMaterial(pugi::xml_node node) {
 
 static Geometry* _createSphere(pugi::xml_node node) {
   assert(!strncmp( node.attribute("type").value(), "sphere", 7 ));
-  Sphere *s = new Sphere;
+  Sphere *s = new(pool()) Sphere;
   s->center = _vec3Attr(node, "center");
   s->radius = node.attribute("radius").as_float(1.0f);
   return s;
@@ -29,7 +63,7 @@ static Geometry* _createSphere(pugi::xml_node node) {
 
 static Geometry* _createPlane(pugi::xml_node node) {
   assert(!strncmp( node.attribute("type").value(), "plane", 6 ));
-  Plane *p = new Plane;
+  Plane *p = new(pool()) Plane;
   p->center = _vec3Attr(node, "center");
   p->normal = _vec3Attr(node, "normal");
   return p;
@@ -37,7 +71,7 @@ static Geometry* _createPlane(pugi::xml_node node) {
 
 static Geometry* _createDisk(pugi::xml_node node) {
   assert(!strncmp( node.attribute("type").value(), "disk", 5 ));
-  Disk *d = new Disk;
+  Disk *d = new(pool()) Disk;
   d->center = _vec3Attr(node, "center");
   d->normal = _vec3Attr(node, "normal");
   d->radius = node.attribute("radius").as_float(1.0f);
@@ -46,7 +80,7 @@ static Geometry* _createDisk(pugi::xml_node node) {
 
 static Geometry* _createOrientedBox(pugi::xml_node node) {
   assert(!strncmp( node.attribute("type").value(), "orb", 4 ));
-  OrientedBox *orb = new OrientedBox;
+  OrientedBox *orb = new(pool()) OrientedBox;
   orb->center = _vec3Attr(node, "center");
   orb->axis[0] = normalize(_vec3Attr(node, "x-axis"));
   orb->axis[1] = normalize(_vec3Attr(node, "y-axis"));
@@ -71,8 +105,9 @@ bool Scene::read(std::string const& filename) {
     return false;
   }
   for (Geometry* g:geometry_list) {
-    delete g;
+    g->~Geometry();
   }
+  pool().reset();
   geometry_list.clear();
   material_list.clear();
 

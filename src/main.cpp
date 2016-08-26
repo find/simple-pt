@@ -48,8 +48,8 @@ int main(int argc, char** argv)
   } else {
     auto start = std::chrono::high_resolution_clock::now();
     render(&bm, scene, opt);
-    auto duration = std::chrono::high_resolution_clock::now() - start;
-    fprintf(stdout, "rendering takes %llds\n", int64_t(std::chrono::duration_cast<std::chrono::seconds>(duration).count()));
+    std::chrono::duration<double, std::milli> duration = std::chrono::high_resolution_clock::now() - start;
+    fprintf(stdout, "rendering takes %.3fs\n", duration.count()/1000.0);
   }
   std::string ofn = args["--output"].asString();
   saveRenderTarget(ofn.c_str(), bm);
