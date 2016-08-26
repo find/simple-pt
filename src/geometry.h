@@ -8,9 +8,8 @@ struct ray_t {
 };
 
 struct intersection_t {
-  vec3_t intersection[2];
-  vec3_t normal[2];
-  int    num;
+  vec3_t position;
+  vec3_t normal;
   material_t const *material;
 };
 

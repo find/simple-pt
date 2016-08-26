@@ -27,13 +27,9 @@ Options:
 int main(int argc, char** argv)
 {
   Scene scene;
-  std::map<std::string, docopt::value> args;
-  try {
-    args = docopt::docopt(USAGE, { argv + 1, argv + argc }, true, "simple tracer 0.0.1");
-  } catch (std::exception const &e) {
-    fprintf(stderr, "error: %s\n", e.what());
-    return -1;
-  }
+  std::map<std::string, docopt::value> args
+    = docopt::docopt(USAGE, { argv + 1, argv + argc }, true, "simple tracer 0.0.1");
+
   if (!scene.read(args["<scene>"].asString())) {
     fprintf(stderr, "failed to read scene %s\n", argv[1]);
     return 2;

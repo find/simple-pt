@@ -1,5 +1,6 @@
 #include "render.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <random>
 
 bitmap_t createRenderTarget(int width, int height) {
@@ -9,7 +10,7 @@ bitmap_t createRenderTarget(int width, int height) {
     height
   };
   if (width>0 && height>0) {
-    rt.pixels = new vec3_t[width*height];
+    rt.pixels = static_cast<vec3_t*>(_aligned_malloc(sizeof(vec3_t)*width*height, 16));
     memset(rt.pixels, 0, sizeof(vec3_t)*width*height);
   }
   return rt;
@@ -18,7 +19,7 @@ bitmap_t createRenderTarget(int width, int height) {
 void deleteRenderTarget(bitmap_t *bm) {
   if (!bm || !bm->pixels)
     return;
-  delete[] bm->pixels;
+  _aligned_free(bm->pixels);
   bm->width = 0;
   bm->height = 0;
 }
@@ -80,9 +81,9 @@ void renderLowQuality(bitmap_t *target, Scene const& scene, option_t const& opt)
       for (Geometry* g:scene.geometry_list) {
         intersection_t intersection;
         if (g->intersect(ray, &intersection) &&
-            (squareDist=lengthSquare(intersection.intersection[0]-ray.origin))<minSquareDist) { // TODO: transparency
+            (squareDist=lengthSquare(intersection.position-ray.origin))<minSquareDist) { // TODO: transparency
           minSquareDist = squareDist;
-          target->pixels[iy*target->width + ix] = intersection.material->color * std::abs(dot(normalize(vec3_t(0,-1,1)), intersection.normal[0]));
+          target->pixels[iy*target->width + ix] = intersection.material->color * std::abs(dot(normalize(vec3_t(0,-1,1)), intersection.normal));
           // target->pixels[iy*target->width + ix] = normalize(intersection.normal[0]*real_t(0.5) + vec3_t(0.5, 0.5, 0.5));
         }
       }
@@ -132,7 +133,7 @@ static vec3_t importanceSampleCos(real_t randPhi, real_t randTheta, real_t rough
 }
 
 // taken from unreal engine
-static vec3_t tangentToWorld(vec3_t vec, vec3_t normal) {
+static vec3_t tangentToWorld(vec3_t const& vec, vec3_t const& normal) {
   vec3_t const up = std::abs(normal.z) < 0.999 ? vec3_t(0, 0, 1) : vec3_t(1, 0, 0);
   vec3_t const x = normalize(cross(up, normal));
   vec3_t const y = cross(normal, x);
@@ -165,14 +166,14 @@ static vec3_t radiance(ray_t const& ray, Scene const& scene, int depth, RandomFu
     for (Geometry* g : scene.geometry_list) {
       intersection_t intr;
       real_t distance2;
-      if (g->intersect(ray, &intr) && (distance2 = lengthSquare(intr.intersection[0] - ray.origin)) < closest2) {
+      if (g->intersect(ray, &intr) && (distance2 = lengthSquare(intr.position - ray.origin)) < closest2) {
         closest2 = distance2;
         hasHit = true;
         nearestHit = intr;
       }
     }
     if (hasHit) {
-      ray_t ref = reflect(ray, nearestHit.intersection[0], nearestHit.normal[0], nearestHit.material, f);
+      ray_t ref = reflect(ray, nearestHit.position, nearestHit.normal, nearestHit.material, f);
       ref.origin += ref.direction*real_t(1e-4);
       color = radiance(ref, scene, depth - 1, f);
       if (nearestHit.material->emit) {
@@ -231,7 +232,7 @@ void render(bitmap_t *target, Scene const& scene, option_t const& opt) {
         for (Geometry* g : scene.geometry_list) {
           intersection_t intersection;
           if (g->intersect(ray, &intersection) &&
-            (squareDist = lengthSquare(intersection.intersection[0] - ray.origin)) < minSquareDist) {
+            (squareDist = lengthSquare(intersection.position - ray.origin)) < minSquareDist) {
             minSquareDist = squareDist;
             hasHit = true;
             nearestHit = intersection;
@@ -241,7 +242,7 @@ void render(bitmap_t *target, Scene const& scene, option_t const& opt) {
           pixelColor = vec3_t(0, 0, 0);
 
           for (int i = 0; i < opt.samples; ++i) {
-            ray_t ref = reflect(ray, nearestHit.intersection[0], nearestHit.normal[0], nearestHit.material, random);
+            ray_t ref = reflect(ray, nearestHit.position, nearestHit.normal, nearestHit.material, random);
             pixelColor += radiance(ref, scene, opt.depth, random) * nearestHit.material->color * real_t(1.0 / opt.samples);
           }
         }

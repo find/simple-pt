@@ -2,6 +2,8 @@
 #include <limits>
 #include <algorithm>
 
+static const real_t EPS = real_t(1e-5);
+
 /// reference: http://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-sphere-intersection
 bool Sphere::intersect(ray_t const& ray, intersection_t *intersection) const {
   if (!intersection) {
@@ -13,51 +15,35 @@ bool Sphere::intersect(ray_t const& ray, intersection_t *intersection) const {
   real_t a1 = dot(ray.direction, diff);
   real_t discr = a1*a1-a0;
   if (discr < real_t(0)) {
-    intersection->num = 0;
     return false;
   }
 
-  real_t t[2] = { real_t(0), real_t(0) };
+  real_t t = real_t(0);
 
-  if (std::fabs(a0) < 1e-5) { // on the surface
-    intersection->num = 0;
+  if (std::fabs(a0) < EPS) { // on the surface
     return false;
   }
   if (a0 < real_t(0)) {
-    // ray starts inside the sphere
-    intersection->num = 1;
+    // ray starts inside the sphere, one intersection
     real_t root = std::sqrt(discr);
-    t[0] = -a1 + root;
+    t = -a1 + root;
   } else if (discr > real_t(0)) {
-    intersection->num = 2;
+    // two intersections
     real_t root = std::sqrt(discr);
-    t[0] = -a1 - root;
-    t[1] = -a1 + root;
+    t = -a1 - root;
+    if (t <= 0)
+      t = -a1 + root;
   } else { // discr == 0
-    intersection->num = 1;
-    t[0] = -a1;
+    t = -a1;
   }
 
-  if (intersection->num > 0) {
-    if (t[0] < 0 && intersection->num > 1) {
-      --intersection->num;
-      t[0] = t[1];
-    }
-    if (t[0] < 0) {
-      intersection->num = 0;
-      return false;
-    }
-    intersection->intersection[0] = ray.origin + ray.direction * t[0];
-    intersection->normal[0] = normalize(intersection->intersection[0] - center);
-    if (intersection->num > 1) {
-      intersection->intersection[1] = ray.origin + ray.direction * t[1];
-      intersection->normal[1] = normalize(intersection->intersection[1] - center);
-    }
-    intersection->material = &material;
-    return true;
-  } else {
+  if (t < 0) {
     return false;
   }
+  intersection->position = ray.origin + ray.direction * t;
+  intersection->normal = normalize(intersection->position - center);
+  intersection->material = &material;
+  return true;
 }
 
 /// reference: http://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-plane-and-ray-disk-intersection
@@ -73,14 +59,12 @@ bool Plane::intersect(ray_t const& ray, intersection_t *intersection) const {
     t = -dist_to_ray_origin / denom;
   }
   if (t <= 1e-5) {
-    intersection->num = 0;
     return false;
   }
   vec3_t p = ray.origin + ray.direction*t;
 
-  intersection->num = 1;
-  intersection->intersection[0] = p;
-  intersection->normal[0] = normal;
+  intersection->position = p;
+  intersection->normal = normal;
   intersection->material = &material;
   return true;
 }
@@ -90,9 +74,8 @@ bool Disk::intersect(ray_t const &ray, intersection_t *intersection) const {
   if (!this->Plane::intersect(ray, intersection)) {
     return false;
   }
-  vec3_t d = intersection->intersection[0] - center;
+  vec3_t d = intersection->position - center;
   if (dot(d,d) > radius*radius) {
-    intersection->num = 0;
     return false;
   }
   return true;
@@ -136,10 +119,9 @@ bool OrientedBox::intersect(ray_t const& ray, intersection_t *intersection) cons
                                    dot(ray.direction, axis[1]),
                                    dot(ray.direction, axis[2]) );
 
-  if (std::abs(std::abs(origin.x) - extent.x) < 1e-5 ||
-      std::abs(std::abs(origin.y) - extent.y) < 1e-5 ||
-      std::abs(std::abs(origin.z) - extent.z) < 1e-5) { // ray starts at surface of this
-    intersection->num = 0;
+  if (std::abs(std::abs(origin.x) - extent.x) < EPS ||
+      std::abs(std::abs(origin.y) - extent.y) < EPS ||
+      std::abs(std::abs(origin.z) - extent.z) < EPS) { // ray starts at surface of this
     return false;
   }
   real_t t0 = real_t(0);
@@ -154,24 +136,14 @@ bool OrientedBox::intersect(ray_t const& ray, intersection_t *intersection) cons
       clip(-direction.z,  origin.z - extent.z, axis[2], -axis[2], &t0, &t1, &n0, &n1) ) {
     lineIntersect = true;
   } else {
-    intersection->num = 0;
     return false;
   }
 
-  if (t1 < 0) {
-    intersection->num = 0;
+  if (t0 <= EPS) {
     return false;
-  }
-  if (t0 < 0 || t0 == t1) { // t1 >=0
-    intersection->num = 1;
-    intersection->intersection[0] = ray.origin + t1 * ray.direction;
-    intersection->normal[0] = n1;
   } else { // t0 >=0 && t1 >= 0
-    intersection->num = 2;
-    intersection->intersection[0] = ray.origin + t0 * ray.direction;
-    intersection->intersection[1] = ray.origin + t1 * ray.direction;
-    intersection->normal[0] = n0;
-    intersection->normal[1] = n1;
+    intersection->position = ray.origin + t0 * ray.direction;
+    intersection->normal = n0;
   }
   intersection->material = &material;
   return true;
